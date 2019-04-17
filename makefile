@@ -5,7 +5,7 @@ ifeq ($(OS), Linux)
 else($(OS), Darwin)                                    
     export MAKEFLAGS="-j $(sysctl-n hw.ncpu)" \
 else                                                        
-    #Windows?  not worth...
+    #Windows?  not worth it...
 endif 
 
 TOPTARGETS := all clean
