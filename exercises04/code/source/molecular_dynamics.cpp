@@ -246,8 +246,12 @@ MolecularDynamics::MolecularDynamics(std::string simParameters,
         exit(1);
     }
     
-    for (unsigned int i=0; i<npart; ++i)
+    for (unsigned int i=0; i<npart; ++i){
         ReadConf >> xold[i] >> yold[i] >> zold[i];
+        xold[i] = xold[i] * box;
+        yold[i] = yold[i] * box;
+        zold[i] = zold[i] * box;
+    }
     ReadConf.close();
 
     //one step of verlet
