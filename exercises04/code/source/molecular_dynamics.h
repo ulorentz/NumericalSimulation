@@ -8,9 +8,17 @@
 
 class MolecularDynamics{
     public:
+        //Input parameters:
+        // - 'simParameters' is the filename for input parameters
+        // - 'configFile' is the filename for initial molecular configurations
         MolecularDynamics(std::string simParameters, 
                           std::string configFile);
-        
+        //Input parameters:
+        // - 'simParameters' is the filename for input parameters
+        // - 'configFile' is the filename for initial molecular configurations,
+        //    usually is the last configuration of a previous simulation.
+        // - 'oldConfigFile' is the filename for the molecular configuration 
+        //    prior to 'configFile': it is used to extrapolate velocities.
         MolecularDynamics(std::string inputFile, 
                           std::string configFile,
                           std::string oldConfigFile);
