@@ -1,6 +1,8 @@
 #include "travelling_salesman.h"
 #include <iostream>
 #include <cmath>
+#include <cassert>
+
 
 /*********** CitiesLocation ***********/
 CitiesLocation::CitiesLocation(unsigned int n_cities, 
@@ -195,6 +197,9 @@ GeneticTSP::GeneticTSP(unsigned int population_size,
     norm(_norm),
     rand("Primes", "seed.in")
 {
+    //I want population size to be even for the evolution algorithm that I have
+    //implemented, so I ensure it.
+    population_size=(population_size/2)*2;
     for(unsigned int i=0; i<population_size; ++i)
         paths.push_back(SalesmanPath(n_cities));
     for(auto & it : paths)
@@ -202,59 +207,73 @@ GeneticTSP::GeneticTSP(unsigned int population_size,
 }
 
 unsigned int GeneticTSP::selection(){
-    return paths.size()*std::pow(rand.Rannyu(),2);
+    return paths.size()*std::pow(rand.Rannyu(),5);
 }
 
 void GeneticTSP::Evolve(){
-    if(rand.Rannyu()<0.99) { //crossover
-        //the two parents
-        unsigned int sel1=selection();
-        unsigned int sel2=selection();
-        std::vector<unsigned int> p1=paths[sel1].getPath();
-        std::vector<unsigned int> p2=paths[sel2].getPath();
-        //decide at wich point break the gene
-        unsigned int break_idx=int(rand.Rannyu()*p1.size());
-        std::vector<unsigned int> index1;
-        std::vector<unsigned int> index2;
-        //vector one, let's find in the second vector the missing part of the 
-        //first one and do the same for the second one
-        std::vector<unsigned int>::iterator it;
-        for(unsigned int i=break_idx; i<p1.size(); ++i){
-            it=std::find(p2.begin(), p2.end(), p1[i]);
-            index2.push_back(it-p2.begin());
-            it=std::find(p1.begin(), p1.end(), p2[i]);
-            index1.push_back(it-p1.begin());
+    SalesmanPath best1=paths[0]; 
+    SalesmanPath best2=paths[1]; 
+    for(unsigned int j=0; j<paths.size();j+=2){ //I keep the two bests
+        if(rand.Rannyu()<0.7) { //crossover
+            //the two parents
+            unsigned int sel1=selection();
+            unsigned int sel2=selection();
+            std::vector<unsigned int> p1=paths[sel1].getPath();
+            std::vector<unsigned int> p2=paths[sel2].getPath();
+            //decide at wich point break the gene
+            unsigned int break_idx=int(rand.Rannyu()*p1.size());
+            std::vector<unsigned int> index1;
+            std::vector<unsigned int> index2;
+            //vector one, let's find in the second vector the missing part of 
+            //the first one and do the same for the second one
+            std::vector<unsigned int>::iterator it;
+            for(unsigned int i=break_idx; i<p1.size(); ++i){
+                it=std::find(p2.begin(), p2.end(), p1[i]);
+                index2.push_back(it-p2.begin());
+                it=std::find(p1.begin(), p1.end(), p2[i]);
+                index1.push_back(it-p1.begin());
+            }
+            //sort the indeces
+            std::sort(index1.begin(), index1.end());
+            std::sort(index2.begin(), index2.end());
+    
+            //fill the ending of the vector with the numbers in the order found.
+            std::vector<unsigned int> new_p1, new_p2;
+            new_p1=p1;
+            new_p2=p2;
+            for(unsigned int i=break_idx; i<p1.size(); ++i){
+                new_p1[i]=p2[index2[i-break_idx]]; 
+                new_p2[i]=p1[index1[i-break_idx]]; 
+            }
+    
+            //now create the childrens with the given paths
+            tmp_paths.push_back(SalesmanPath(new_p1));
+            tmp_paths.push_back(SalesmanPath(new_p2));
+            tmp_paths[tmp_paths.size()-1].ComputeFitness(cities, norm);
+            tmp_paths[tmp_paths.size()-2].ComputeFitness(cities, norm);
         }
-        //sort the indeces
-        std::sort(index1.begin(), index1.end());
-        std::sort(index2.begin(), index2.end());
+        else{ //mutation
+            unsigned int sel1=selection();
+            unsigned int sel2=selection();
+            paths[sel1].Mutation();
+            paths[sel1].ComputeFitness(cities, norm);
 
-        //fill the ending of the vector with the numbers in the order found.
-        std::vector<unsigned int> new_p1, new_p2;
-        new_p1=p1;
-        new_p2=p2;
-        for(unsigned int i=break_idx; i<p1.size(); ++i){
-            new_p1[i]=p2[index2[i-break_idx]]; 
-            new_p2[i]=p1[index1[i-break_idx]]; 
+            tmp_paths.push_back(paths[sel1]);
+            tmp_paths.push_back(paths[sel2]);
+            tmp_paths[tmp_paths.size()-1].Mutation();
+            tmp_paths[tmp_paths.size()-2].Mutation();
+            tmp_paths[tmp_paths.size()-1].ComputeFitness(cities, norm);
+            tmp_paths[tmp_paths.size()-2].ComputeFitness(cities, norm);
         }
-
-        //now create the childrens with the given paths
-        SalesmanPath path1(new_p1);
-        SalesmanPath path2(new_p2);
-        path1.ComputeFitness(cities, norm);
-        path2.ComputeFitness(cities, norm);
-        //add in the end of the queue the two childrens
-        paths[paths.size()-2]=path1;
-        paths[paths.size()-1]=path2;
     }
-    else{ //mutation
-        unsigned int sel=selection();
-        SalesmanPath p=paths[sel];
-        p.Mutation();
-        p.ComputeFitness(cities, norm);
-        paths[paths.size()-1]=p;
-    }
-    std::sort(paths.begin(), paths.end());
+    tmp_paths.push_back(best1);
+    tmp_paths.push_back(best2);
+    std::sort(tmp_paths.begin(), tmp_paths.end());
+    tmp_paths.pop_back();
+    tmp_paths.pop_back();
+    paths=tmp_paths;
+    tmp_paths.clear();
+    
 }
 
 

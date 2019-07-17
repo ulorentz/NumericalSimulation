@@ -7,8 +7,6 @@
 #include <numeric>           //partial_sum
 
 
-#define _TRIVIAL
-#undef _TRIVIAL
 int main(){
     Random rand;
     initialize_seed(rand, "Primes", "seed.in");
@@ -27,7 +25,7 @@ int main(){
         n_hit=0;
         for(unsigned int i=0; i<m; ++i){
             //computing pi
-            x=rand.Rannyu(0, D);    //position of baricenter 
+            x=rand.Rannyu(0, D);    //position of barycenter 
             x1=rand.Rannyu(-1,1);   //x1, x2 are coordinate into rectangle
             x2=rand.Rannyu();
             while(x1*x1+x2*x2>1){   //ensure x1 is distributed as a semicircle

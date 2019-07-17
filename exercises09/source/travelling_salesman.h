@@ -154,7 +154,10 @@ class GeneticTSP{
 
     private:
         void crossover(unsigned int i, unsigned int j); //index of two partners
-        std::vector <SalesmanPath> paths;
+        std::vector <SalesmanPath> paths, tmp_paths; //tmp_paths is used in the
+                                                     //genetic algo. I define it
+                                                     //here to save allocation
+                                                     //time.
         CitiesLocation cities;
         std::string norm;
         

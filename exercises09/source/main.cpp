@@ -3,114 +3,86 @@
 #include "travelling_salesman.h"
 #include <fstream>
 
-//#define _CONVERGENCE_
+
 //TODO define in a serious way the convergence!
-//
-//
-void find_convergence(GeneticTSP &);
+/* run_genetic is a function that simply setup the code for the genetic 
+ * algorithm, where:
+ *  - topology:  is or "circle" or " squared", and indicates how cities are 
+ *    located.
+ *  - norm: can be "L2" or "L1"
+ *  - n_genes is an integer indicating the number of genes in the population
+ *  - n_cities is an integer that specifies the number of cities
+ *  The true code is in the library "travelling_salesman", this main simply 
+ *  calls functions and classes defined there.
+ */
 
-int main(int argc, char** argv){
 
-/*****************************************************************************/
-// Circular part
-/*****************************************************************************/
-    GeneticTSP circle_tsp(10, 30, "circle", "L2");
-    
-    //write out the cities location
-    std::ofstream out("outputs/circle_cities_location.dat");
-    std::vector<std::array <double , 2 > > locations=circle_tsp.getLocations();
+
+
+#define _CONVERGENCE_
+//void find_convergence(GeneticTSP &);
+void find_convergence(GeneticTSP &tsp, std::ofstream& av, std::ofstream& best);
+
+void run_genetic(std::string topology, 
+                 std::string norm, 
+                 unsigned int n_genes, 
+                 unsigned int n_cities)
+{
+    GeneticTSP tsp(n_genes, n_cities, topology, norm);
+    std::ofstream out("outputs/"+topology +"_cities_location.dat");
+    std::vector<std::array <double , 2 > > locations;
+    locations=tsp.getLocations();
     for(auto &it:locations)
         out << it[0] << "\t" << it[1] << std::endl;
     out.close();
-    
-    //initial best random path
-    SalesmanPath best=circle_tsp.getBestPath();
-    std::cout << "Initial best fitness circle: \t" 
-              << best.getFitness() << std::endl;
-    out.open("outputs/circle_initial_best_path.dat");
+    SalesmanPath best=tsp.getBestPath();
+    std::cout << "Initial best fitness" << topology << " " << norm <<": \t"
+              << best.getFitness() << std::endl;   
+    out.open("outputs/"+topology+"_initial_best_path.dat");
     std::vector<unsigned int> best_path = best.getPath();
     for(auto &it : best_path)
         out << it << std::endl;
     out.close();
+    
+    
+    std::ofstream out_av("outputs/fit_av_"+topology+"_"+norm+".dat");
+    std::ofstream out_best("outputs/fit_best_"+topology+"_"+norm+".dat");
+    find_convergence(tsp, out_av, out_best);
+    out_av.close();
+    out_best.close();
 
-#ifdef _CONVERGENCE_    
-    find_convergence(circle_tsp);
-#else
-    std::ofstream av("av_circle.dat");
-    std::ofstream bestout("best_circle.dat");
-    for(unsigned int i = 0;i<5000 ; ++i){
-        circle_tsp.Evolve();
-        bestout<<circle_tsp.getFitness() << std::endl;
-        av<<circle_tsp.getAveragedFitness() << std::endl;
-    }
-    av.close();
-    bestout.close();
-
-#endif //_CONVERGENCE_
-
-
-    best=circle_tsp.getBestPath();
-    std::cout << "Final best fitness circle: \t" 
+    best=tsp.getBestPath(); 
+    std::cout << "Final best fitness" <<topology<<" " <<norm <<": \t"
               << best.getFitness() << std::endl;
-    out.open("outputs/circle_final_best_path.dat");
+    out.open("outputs/"+topology+"_"+norm+ "_final_best_path.dat");
     best_path = best.getPath();
     for(auto &it : best_path)
         out << it << std::endl;
     out.close();
     std::cout << std::endl;
-/*****************************************************************************/
-/* Squared part                                                              */
-/*****************************************************************************/
-    GeneticTSP squared_tsp(10, 30, "squared", "L2");
-    
-    //write out the cities location
-    out.open("outputs/squared_cities_location.dat");
-    locations=squared_tsp.getLocations();
-    for(auto &it:locations)
-        out << it[0] << "\t" << it[1] << std::endl;
-    out.close();
-    
-    //initial best random path
-    best=squared_tsp.getBestPath();
-    std::cout << "Initial best squared fitness: \t" 
-              << best.getFitness() << std::endl;
-    out.open("outputs/squared_initial_best_path.dat");
-    best_path = best.getPath();
-    for(auto &it : best_path)
-        out << it << std::endl;
-    out.close();
-
-#ifdef _CONVERGENCE_    
-    find_convergence(squared_tsp);
-#else
-    av.open("av_squared.dat");
-    bestout.open("best_squared.dat");
-    for(unsigned int i = 0;i<5000 ; ++i){
-        squared_tsp.Evolve();
-        bestout<<squared_tsp.getFitness() << std::endl;
-        av<<squared_tsp.getAveragedFitness() << std::endl;
-    }
-    av.close();
-    bestout.close();
+}
 
 
-#endif //_CONVERGENCE_
+int main(){
+    //Circle 
+    //L2
+    run_genetic("circle", "L2", 10, 30);
+    //L1
+    run_genetic("circle", "L1", 10, 30);
 
-
-    best=squared_tsp.getBestPath();
-    std::cout << "Final best fitness squared: \t" 
-              << best.getFitness() << std::endl;
-    out.open("outputs/squared_final_best_path.dat");
-    best_path = best.getPath();
-    for(auto &it : best_path)
-        out << it << std::endl;
-    out.close();
+    //Square
+    //L2
+//run_genetic("squared", "L2", 10, 30);
+    run_genetic("squared", "L2", 10, 30);
+    //L1
+    run_genetic("squared", "L1", 10, 30);
 }
 
 
 
-void find_convergence(GeneticTSP &tsp){
-    double fit1, fit2;
+/*void find_convergence(GeneticTSP &tsp){
+#ifdef _CONVERGENCE_    
+   double fit1, fit2, fit3,fit4;
     fit1=tsp.getBestPath().getFitness();
     for(unsigned int i = 0; ; ++i){
         tsp.Evolve();
@@ -118,6 +90,7 @@ void find_convergence(GeneticTSP &tsp){
             fit2=tsp.getBestPath().getFitness();
             
             if(fit1-fit2< 0.00001){
+                
                 std::cout << "Convergence reached after " << i << " steps.\n";
                 break;
             }
@@ -128,4 +101,51 @@ void find_convergence(GeneticTSP &tsp){
             exit(0);
         }
     }
+#else
+    for(unsigned int i = 0;i<1000000 ; ++i)
+        tsp.Evolve();
+#endif //_CONVERGENCE_
+}
+*/
+
+//evolve the genetic for step time, and save update counter, that counts the 
+//total time of evolutions
+double evolve(GeneticTSP &tsp, 
+              unsigned int step, 
+              unsigned int &counter,
+              std::ofstream& av, 
+              std::ofstream& best){
+    double cost1=0., cost2=0.;
+    cost1=tsp.getFitness();
+    for(unsigned int i=0; i<step; ++i){
+        tsp.Evolve();
+        av<<tsp.getAveragedFitness() << std::endl;
+        best << tsp.getFitness() << std::endl;
+    }
+    counter+=step;
+    cost2=tsp.getFitness();
+    return cost1-cost2;
+}
+
+void find_convergence(GeneticTSP &tsp, std::ofstream& av, std::ofstream& best){
+    //basically I require that convergence is reached if for "tot" times
+    //the cost  decreases less than 0.001
+    unsigned int counter=0;
+    double cost=0.;
+    unsigned int sum=0;
+    const unsigned int tot=100, breaker=10000000;
+    do{
+        sum=0;
+        for(unsigned int i=0;i<tot; ++i){    
+            cost=evolve(tsp, 1000, counter, av, best);
+            if(cost<0.001)
+                sum+=1;
+        }
+        if(sum==tot) 
+            break;
+    }while(counter!=breaker);
+    if(counter==breaker)
+        std::cout<<"Unable to reach convergence after " << breaker<<" steps\n";
+    else
+        std::cout <<"Convergence found after " << counter << " steps\n";
 }

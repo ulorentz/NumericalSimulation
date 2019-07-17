@@ -102,10 +102,9 @@ MolecularDynamics::MolecularDynamics(std::string simParameters,
         z[i] = z[i] * box;
     }
     ReadConf.close();
-  
     //Prepare initial velocities
-    std::cout << "Prepare random velocities with center of mass velocity equal"
-        "to zero \n\n"; 
+    std::cout << "Prepare random velocities with Maxwell-Boltzmann distribution"
+        "\n\n"; 
     double sumv[3] = {0.0, 0.0, 0.0};
     for (unsigned int i=0; i<npart; ++i){
         vx[i] = rand.Rannyu() - 0.5;
@@ -128,16 +127,21 @@ MolecularDynamics::MolecularDynamics(std::string simParameters,
     sumv2 /= (double)npart;
     
     fs = sqrt(3 * temp / sumv2);   // fs = velocity scale factor 
+    
+/*    for(unsigned int i=0; i<npart;++i){
+        vx[i]=rand.Gauss(0., std::sqrt(temp));
+        vy[i]=rand.Gauss(0., std::sqrt(temp));
+        vz[i]=rand.Gauss(0., std::sqrt(temp));
+    }
+*/
     for (unsigned int i=0; i<npart; ++i){
         vx[i] *= fs;
         vy[i] *= fs;
         vz[i] *= fs;
-        xold[i] = x[i] - vx[i] * delta;
-        yold[i] = y[i] - vy[i] * delta;
-        zold[i] = z[i] - vz[i] * delta;
+        xold[i] = Pbc(x[i] - vx[i] * delta);
+        yold[i] = Pbc(y[i] - vy[i] * delta);
+        zold[i] = Pbc(z[i] - vz[i] * delta);
     }
-
-
 }
 
 MolecularDynamics::MolecularDynamics(std::string simParameters, 
@@ -284,9 +288,9 @@ MolecularDynamics::MolecularDynamics(std::string simParameters,
         vz[i]=scaling_factor*vz[i];
     }
     for(unsigned int i=0; i<npart; ++i){
-        xold[i]=xtmp[i]-2*delta*vx[i];
-        yold[i]=ytmp[i]-2*delta*vy[i];
-        zold[i]=ztmp[i]-2*delta*vz[i];
+        xold[i]=Pbc(xtmp[i]-2*delta*vx[i]);
+        yold[i]=Pbc(ytmp[i]-2*delta*vy[i]);
+        zold[i]=Pbc(ztmp[i]-2*delta*vz[i]);
     }
 }
 
@@ -414,7 +418,7 @@ void MolecularDynamics::Measure()
     stima_kin = t/(double)npart; //Kinetic energy
     stima_temp = (2.0 / 3.0) * t/(double)npart; //Temperature
     stima_etot = (t+v)/(double)npart; //Total enery
-    stima_press=16.*stima_press/(npart*vol);
+    stima_press=16.*stima_press/(vol);
     stima_press+=stima_temp*rho;
 
     Epot << stima_pot  << std::endl;
@@ -514,4 +518,3 @@ void MolecularDynamics::RunSimulation()
     ConfFinal("config.final");
     PrintBlocking();
 }
-

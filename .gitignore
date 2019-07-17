@@ -7,3 +7,9 @@ config*
 Ising1D
 MolDyn
 TSP
+frames
+MolecularMC
+main
+!README.txt
+!input.dat
+!config.*
